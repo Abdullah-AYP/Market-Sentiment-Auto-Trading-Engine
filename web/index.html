@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Market Sentiment Auto-Trading Engine</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="ambient"></div>
+    <main class="terminal-shell">
+      <header class="top-strip panel">
+        <div class="brand-block">
+          <p class="overline">AI Trading Terminal</p>
+          <h1>Market Sentiment Desk</h1>
+          <p class="micro">Realtime market feed + LLM signal engine</p>
+        </div>
+
+        <nav class="main-nav" aria-label="Primary">
+          <a class="nav-link" href="#overview">Overview</a>
+          <a class="nav-link" href="#signals">Signals</a>
+          <a class="nav-link" href="#news">News</a>
+          <a class="nav-link" href="#paper">Paper</a>
+          <a class="nav-link" href="#history">History</a>
+        </nav>
+
+        <div class="global-controls">
+          <select id="symbolSelect" class="select-control"></select>
+          <select id="intervalSelect" class="select-control">
+            <option value="1m">1m</option>
+            <option value="5m">5m</option>
+            <option value="15m" selected>15m</option>
+            <option value="1h">1h</option>
+            <option value="4h">4h</option>
+            <option value="1d">1d</option>
+          </select>
+          <button id="runSelectedBtn" class="btn-action">Run Selected</button>
+          <button id="runAllBtn" class="btn-accent">Random</button>
+          <button id="refreshBtn" class="btn-ghost">Refresh</button>
+          <button id="themeToggleBtn" class="theme-switch" type="button" aria-pressed="false">
+            <span class="switch-track" aria-hidden="true">
+              <span class="switch-thumb"></span>
+            </span>
+            <span class="switch-label" id="themeToggleText">Dark</span>
+          </button>
+          <label class="toggle" for="autoRefresh">
+            <input type="checkbox" id="autoRefresh" checked />
+            <span>Auto Refresh</span>
+          </label>
+          <label class="toggle" for="autoRunCycle">
+            <input type="checkbox" id="autoRunCycle" />
+            <span>Auto Run</span>
+          </label>
+          <label class="toggle" for="autoPaper">
+            <input type="checkbox" id="autoPaper" />
+            <span>Auto Paper</span>
+          </label>
+        </div>
+
+        <div class="status-chips">
+          <span class="chip">Model: <strong id="providerModel">-</strong></span>
+          <span class="chip">Symbol: <strong id="activeSymbol">-</strong></span>
+          <span class="chip">Signals: <strong id="summaryTotal">0</strong></span>
+        </div>
+      </header>
+
+      <div class="section-divider"><span>Overview</span></div>
+
+      <section class="terminal-grid" id="overview">
+        <aside class="panel watchlist-panel">
+          <h2>Watchlist</h2>
+          <ul id="watchlistBody" class="watchlist"></ul>
+        </aside>
+
+        <section class="panel chart-panel">
+          <div class="chart-header">
+            <div>
+              <h2 id="marketSymbol">-</h2>
+              <p id="latestTimestamp" class="dim">-</p>
+            </div>
+            <div class="price-stack">
+              <strong id="lastPrice">-</strong>
+              <span id="lastChange" class="dim">-</span>
+            </div>
+          </div>
+          <canvas id="candleCanvas" class="chart-canvas"></canvas>
+          <div class="summary-strip">
+            <span class="summary buy">BUY: <strong id="summaryBuy">0</strong></span>
+            <span class="summary sell">SELL: <strong id="summarySell">0</strong></span>
+            <span class="summary hold">HOLD: <strong id="summaryHold">0</strong></span>
+            <span class="summary">Avg Conf: <strong id="summaryAvgConfidence">0%</strong></span>
+          </div>
+        </section>
+
+        <aside class="panel orderbook-panel">
+          <div class="orderbook-head">
+            <h2>Order Book</h2>
+            <span id="spreadValue" class="spread">Spread: -</span>
+          </div>
+          <div class="book-grid">
+            <div>
+              <h3>Asks</h3>
+              <table class="book-table">
+                <thead>
+                  <tr><th>Price</th><th>Qty</th><th>Total</th></tr>
+                </thead>
+                <tbody id="asksBody"></tbody>
+              </table>
+            </div>
+            <div>
+              <h3>Bids</h3>
+              <table class="book-table">
+                <thead>
+                  <tr><th>Price</th><th>Qty</th><th>Total</th></tr>
+                </thead>
+                <tbody id="bidsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="detail-grid">
+        <div class="section-divider divider-span"><span>Signals + News</span></div>
+        <article class="panel signal-panel" id="signals">
+          <h2>Signal + Risk</h2>
+          <p class="signal-badge" id="latestAction">HOLD</p>
+          <dl class="kv">
+            <div><dt>Signal Confidence</dt><dd id="latestConfidence">-</dd></div>
+            <div><dt>Price</dt><dd id="marketPrice">-</dd></div>
+            <div><dt>24h Change</dt><dd id="marketChange">-</dd></div>
+            <div><dt>24h Volume</dt><dd id="marketVolume">-</dd></div>
+            <div><dt>Sentiment Source</dt><dd id="sentimentSource">-</dd></div>
+            <div><dt>Sentiment Score</dt><dd id="sentimentScore">-</dd></div>
+            <div><dt>Sentiment Conf.</dt><dd id="sentimentConfidence">-</dd></div>
+            <div><dt>Trade Allowed</dt><dd id="riskTradeAllowed">-</dd></div>
+            <div><dt>Position Size %</dt><dd id="riskPositionPct">-</dd></div>
+            <div><dt>Stop Loss %</dt><dd id="riskStopLoss">-</dd></div>
+            <div><dt>Take Profit %</dt><dd id="riskTakeProfit">-</dd></div>
+            <div><dt>Max Risk (USDT)</dt><dd id="riskMaxRisk">-</dd></div>
+            <div><dt>Est. Risk (USDT)</dt><dd id="riskEstimatedRisk">-</dd></div>
+          </dl>
+          <p id="sentimentRationale" class="narrative">-</p>
+          <ul id="reasonList" class="reason-list"></ul>
+        </article>
+
+        <article class="panel news-panel" id="news">
+          <h2>Headlines</h2>
+          <ol id="headlineList" class="headline-list"></ol>
+        </article>
+
+        <div class="section-divider divider-span"><span>Paper Account</span></div>
+        <article class="panel paper-panel" id="paper">
+          <div class="paper-header">
+            <h2>Paper Account</h2>
+            <div class="paper-actions">
+              <button id="applyPaperBtn" class="btn-action btn-small">Apply Latest</button>
+              <button id="resetPaperBtn" class="btn-ghost btn-small">Reset Paper</button>
+            </div>
+          </div>
+
+          <dl class="paper-kv">
+            <div><dt>Equity</dt><dd id="paperEquity">-</dd></div>
+            <div><dt>Cash</dt><dd id="paperCash">-</dd></div>
+            <div><dt>Total PnL</dt><dd id="paperTotalPnl">-</dd></div>
+            <div><dt>Realized PnL</dt><dd id="paperRealizedPnl">-</dd></div>
+            <div><dt>Unrealized PnL</dt><dd id="paperUnrealizedPnl">-</dd></div>
+            <div><dt>Fees Paid</dt><dd id="paperFees">-</dd></div>
+            <div><dt>Open Positions</dt><dd id="paperPositionsCount">-</dd></div>
+            <div><dt>Trades Today</dt><dd id="paperTradesToday">-</dd></div>
+            <div><dt>Drawdown</dt><dd id="paperDrawdown">-</dd></div>
+            <div><dt>Hard Stop</dt><dd id="paperHardStop">-</dd></div>
+          </dl>
+
+          <div class="table-wrap">
+            <table class="paper-table">
+              <thead>
+                <tr>
+                  <th>Pos Symbol</th>
+                  <th>Qty</th>
+                  <th>Avg</th>
+                  <th>Mark</th>
+                  <th>UPnL</th>
+                </tr>
+              </thead>
+              <tbody id="paperPositionsBody"></tbody>
+            </table>
+          </div>
+
+          <div class="table-wrap">
+            <table class="paper-table">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Side</th>
+                  <th>Symbol</th>
+                  <th>Qty</th>
+                  <th>Price</th>
+                  <th>PnL</th>
+                </tr>
+              </thead>
+              <tbody id="paperTradesBody"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <div class="section-divider divider-span"><span>History</span></div>
+        <article class="panel history-panel" id="history">
+          <h2>Signal Tape</h2>
+          <div class="table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Time</th>
+                  <th>Action</th>
+                  <th>Conf</th>
+                  <th>Price</th>
+                  <th>Score</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+
+      <p id="statusText" class="status-line">Ready</p>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

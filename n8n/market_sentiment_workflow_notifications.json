@@ -1,0 +1,393 @@
+{
+  "name": "Market Sentiment Signal Router + Notifications",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst timestamp = Math.floor(Date.now() / 1000).toString();\nconst method = 'POST';\nconst path = '/api/n8n/run-once-paper';\nconst query = 'symbol=XRPUSDT';\nconst rawBody = '';\nconst secret = $env.N8N_WEBHOOK_SECRET || '';\nconst payload = `${timestamp}.${method}.${path}.${query}.${rawBody}`;\nconst signature = secret ? crypto.createHmac('sha256', secret).update(payload).digest('hex') : '';\nreturn [{ json: { timestamp, signature } }];"
+      },
+      "id": "2",
+      "name": "Build Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/api/n8n/run-once-paper?symbol=XRPUSDT",
+        "responseFormat": "json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Webhook-Timestamp",
+              "value": "={{$json.timestamp}}"
+            },
+            {
+              "name": "X-Webhook-Signature",
+              "value": "={{$json.signature}}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "3",
+      "name": "Run Engine + Paper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"item\"][\"action\"]}}",
+              "operation": "equal",
+              "value2": "BUY"
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "Is BUY?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        940,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"item\"][\"action\"]}}",
+              "operation": "equal",
+              "value2": "SELL"
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "Is SELL?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "route",
+              "value": "BUY"
+            },
+            {
+              "name": "message",
+              "value": "BUY signal {{$json[\"item\"][\"symbol\"]}} @ {{$json[\"item\"][\"market_price\"]}} | paper={{$json[\"paper\"][\"status\"]}} pnl={{$json[\"paper\"][\"paper\"][\"total_pnl_usdt\"]}}"
+            }
+          ]
+        }
+      },
+      "id": "6",
+      "name": "BUY Branch",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1340,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "route",
+              "value": "SELL"
+            },
+            {
+              "name": "message",
+              "value": "SELL signal {{$json[\"item\"][\"symbol\"]}} @ {{$json[\"item\"][\"market_price\"]}} | paper={{$json[\"paper\"][\"status\"]}} pnl={{$json[\"paper\"][\"paper\"][\"total_pnl_usdt\"]}}"
+            }
+          ]
+        }
+      },
+      "id": "7",
+      "name": "SELL Branch",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1540,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "route",
+              "value": "HOLD"
+            },
+            {
+              "name": "message",
+              "value": "HOLD for {{$json[\"item\"][\"symbol\"]}} | paper={{$json[\"paper\"][\"status\"]}}"
+            }
+          ]
+        }
+      },
+      "id": "8",
+      "name": "HOLD Branch",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1540,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.BUY_WEBHOOK_URL}}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "route",
+              "value": "={{$json.route}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$json.message}}"
+            }
+          ]
+        },
+        "responseFormat": "json",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "9",
+      "name": "Notify BUY Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1740,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SELL_WEBHOOK_URL}}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "route",
+              "value": "={{$json.route}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$json.message}}"
+            }
+          ]
+        },
+        "responseFormat": "json",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "10",
+      "name": "Notify SELL Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1740,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.HOLD_WEBHOOK_URL}}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "route",
+              "value": "={{$json.route}}"
+            },
+            {
+              "name": "message",
+              "value": "={{$json.message}}"
+            }
+          ]
+        },
+        "responseFormat": "json",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "11",
+      "name": "Notify HOLD Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1740,
+        460
+      ]
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Build Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Signature": {
+      "main": [
+        [
+          {
+            "node": "Run Engine + Paper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Engine + Paper": {
+      "main": [
+        [
+          {
+            "node": "Is BUY?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is BUY?": {
+      "main": [
+        [
+          {
+            "node": "BUY Branch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is SELL?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is SELL?": {
+      "main": [
+        [
+          {
+            "node": "SELL Branch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HOLD Branch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BUY Branch": {
+      "main": [
+        [
+          {
+            "node": "Notify BUY Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SELL Branch": {
+      "main": [
+        [
+          {
+            "node": "Notify SELL Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HOLD Branch": {
+      "main": [
+        [
+          {
+            "node": "Notify HOLD Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "template": "market-sentiment-signal-router-notify"
+  },
+  "id": "market-sentiment-signal-router-notify",
+  "tags": []
+}

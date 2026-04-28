@@ -1,0 +1,62 @@
+AI Project Proposal
+ 
+
+Project Title: Market Sentiment Auto-Trading Engine
+
+Submitted By:
+
+1. Muhammad Aazmeer [24K-0978]
+2. Abdullah [24K-0822]
+3. Hassan Ahmed Siddqui [24K-1008]
+1. Project Overview
+Project Topic: An automated cryptocurrency trading signal generator using n8n, the OpenAI API, and live financial data APIs to analyze market sentiment, specifically targeting spot trading pairs like XRP/USDT.
+
+Objective: To automate the extraction of financial news and market data, utilize an LLM to assess market sentiment, and implement a search-based decision tree to generate actionable spot trading signals (Buy, Sell, or Hold).
+
+2. System Description
+Original Problem Background: Spot traders face immense information overload from thousands of news sources and volatile price actions. It is highly difficult to manually consume text data, assess sentiment, and execute timely, emotionless trades.
+
+Innovations Introduced: The system automates the workflow using n8n to continuously fetch real-time news and price data.
+
+It passes this data to the OpenAI API for advanced natural language sentiment analysis, and then applies an algorithmic search through a decision tree to output a definitive trading signal.
+
+This approach improves decision-making efficiency by entirely eliminating emotional trading and the need for manual market monitoring.
+
+3. AI Approach and Methodology
+Search Algorithms: Implementation of a decision-tree search space to evaluate the LLM’s sentiment score against current price levels to determine the optimal final action.
+
+LLM / OpenAI API: Used for natural language understanding to parse complex financial news articles and assign a quantifiable bullish or bearish sentiment score.
+
+ 
+
+Automation Tools: n8n will be utilized to orchestrate the continuous data flow between the external news API, the OpenAI API, and the final output destination.
+
+4. System Rules and Mechanics
+Modified Rules / System Workflow: Financial Data API Fetch → n8n Trigger → OpenAI Sentiment Analysis → Decision Tree Logic Evaluation → Final Trading Signal Output.
+
+Output / Success Conditions: The system successfully achieves its goal by generating an accurate "Buy," "Sell," or "Hold" signal based on the aggregated sentiment and price data, delivering it via an automated alert.
+
+Process Sequence:
+
+1. n8n triggers data fetch at scheduled intervals.
+2. Raw text data is formatted and routed to the OpenAI API.
+3. The LLM processes the text and returns a sentiment score.
+4. Python-based decision logic evaluates the score against current market variables.
+5. The final automated signal is pushed to the user.
+5. Libraries and Tools
+OpenAI API: For natural language processing and sentiment generation.
+
+n8n: For workflow automation and API routing.
+
+Python Libraries: Pandas, NumPy, and Requests for data handling and decision logic.
+
+Other Tools: Public Financial Data APIs (e.g., CoinGecko or Binance API) for live market data.
+
+6. References
+OpenAI API Official Documentation
+
+n8n Workflow Automation Documentation
+
+ 
+
+DISCLAIMER: This proposal represents the initial design and implementation plan for the project. Certain components, methodologies, or tools may be refined or modified during the development phase to improve system performance and feasibility.
