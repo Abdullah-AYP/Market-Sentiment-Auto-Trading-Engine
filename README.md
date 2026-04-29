@@ -1,13 +1,5 @@
 # Market Sentiment Auto-Trading Engine
 
-Project Report / README
-Date: 28 April 2026
-
-Submitted By:
-1. Abdullah [24K-0822]
-2. Muhammad Aazmeer [24K-0978]
-3. Hassan Ahmed Siddqui [24K-1008]
-
 ## Executive Summary
 This project implements the proposal for an automated cryptocurrency signal generator. It ingests live market data and relevant news, computes a sentiment score using an LLM (or a deterministic fallback), applies a decision-tree strategy with risk constraints, and outputs BUY/SELL/HOLD signals. A local web dashboard visualizes signals, and an optional paper-trading layer simulates execution for safe testing. n8n workflows are provided to automate the pipeline and notifications.
 
